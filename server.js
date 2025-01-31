@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = 3001;
-const SECRET_KEY = "scçajvwve9wg58edofergihwefipehoufewhfueqouwgfqouwueqoebqowdfrus";
+const SECRET_KEY = "scçajvgitwve9wg58edofergihwefipehoufewhfueqouwgfqouwueqoebqowdfrus";
 
 app.use(cors());
 app.use(express.json());
@@ -24,24 +24,24 @@ function verifyToken(token) {
 }
 
 wss.on("connection", (ws) => {
-    console.log("Novo cliente conectado!");
+    console.log("client connected");
 
     ws.on("message", (message) => {
         const data = JSON.parse(message);
         
         const decoded = verifyToken(data.token);
         if (!decoded) {
-            ws.send(JSON.stringify({ error: "Autenticação falhou." }));
+            ws.send(JSON.stringify({ error: "Auth failed." }));
             ws.close();
             return;
         }
 
         if (data.type === "fivem") {
             fivemSocket = ws;
-            console.log("FiveM conectado!");
+            console.log("FiveM on!");
         } else if (data.type === "web") {
             webClients.push(ws);
-            console.log("Web conectada!");
+            console.log("Web on!");
         }
 
         if (data.target === "web" && webClients.length > 0) {
@@ -54,7 +54,7 @@ wss.on("connection", (ws) => {
     });
 
     ws.on("close", () => {
-        console.log("Cliente desconectado!");
+        console.log("client disconnected");
         webClients = webClients.filter(client => client !== ws);
         if (ws === fivemSocket) {
             fivemSocket = null;
@@ -64,7 +64,7 @@ wss.on("connection", (ws) => {
 
 app.post("/login", (req, res) => {
     const { username } = req.body;
-    if (!username) return res.status(400).json({ error: "Nome de usuário necessário" });
+    if (!username) return res.status(400).json({ error: "username required" });
 
     const token = jwt.sign({ id: username, role: "vip" }, SECRET_KEY, { expiresIn: "1h" });
     res.json({ token });
