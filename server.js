@@ -1,9 +1,11 @@
 const WebSocket = require("ws");
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = 3001;
+const SECRET_KEY = "scçajvwve9wg58edofergihwefipehoufewhfueqouwgfqouwueqoebqowdfrus";
 
 app.use(cors());
 app.use(express.json());
@@ -13,9 +15,13 @@ const wss = new WebSocket.Server({ port: 3002 });
 let fivemSocket = null;
 let webClients = [];
 
-const AUTH_TOKENS = ["O5mjJtqYO9fFfbO2LrhB8ci7YvbOrfgGRDQdWp7Y8Jv6BytSgvtZv8mVUMTGFCgi", "v8c2KsiKaxQGSredCZ9R09OXdImUK6e4oSwofhthLw38fRXbrKQcUy8Xj638vxV3"];
-// o primeiro é do web e o segundo é fivemad
-
+function verifyToken(token) {
+    try {
+        return jwt.verify(token, SECRET_KEY);
+    } catch (err) {
+        return null;
+    }
+}
 
 wss.on("connection", (ws) => {
     console.log("Novo cliente conectado!");
@@ -23,7 +29,8 @@ wss.on("connection", (ws) => {
     ws.on("message", (message) => {
         const data = JSON.parse(message);
         
-        if (!data.token || !AUTH_TOKENS.includes(data.token)) {
+        const decoded = verifyToken(data.token);
+        if (!decoded) {
             ws.send(JSON.stringify({ error: "Autenticação falhou." }));
             ws.close();
             return;
@@ -53,6 +60,14 @@ wss.on("connection", (ws) => {
             fivemSocket = null;
         }
     });
+});
+
+app.post("/login", (req, res) => {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "Nome de usuário necessário" });
+
+    const token = jwt.sign({ id: username, role: "vip" }, SECRET_KEY, { expiresIn: "1h" });
+    res.json({ token });
 });
 
 app.get("/", (req, res) => {
